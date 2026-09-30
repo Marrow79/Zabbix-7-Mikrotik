@@ -1,0 +1,364 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+  - uuid: 36bff6c29af64692839d077febfc7079
+    name: Templates/Network devices
+  templates:
+  - uuid: 203694caa8f24d528abdb27d33e83f22
+    template: MikroTik netPower 16P by SNMP SwOS
+    name: MikroTik netPower 16P by SNMP (SwOS)
+    description: 'Model profile: MikroTik netPower 16P. Software family: SwOS. Zabbix 7.0.30 standalone SNMP monitoring
+      template. Generic MIBs only: SNMPv2-MIB, IF-MIB. NOT hardware validated: radio signal, LTE signal, model-specific
+      temperatures, PoE power, optical light metrics are omitted to prevent unsupported OID polling. Choose only the
+      matching OS template for each host. Catalog: https://mikrotik.com/products/group/switches. SNMP agent must be configured
+      and reachable.'
+    groups:
+    - name: Templates/Network devices
+    items:
+    - uuid: 04303c4f3d4241429296f57dde98fa49
+      name: ICMP ping
+      type: SIMPLE
+      key: icmpping
+      delay: 1m
+      history: 7d
+      tags:
+      - tag: component
+        value: availability
+      triggers:
+      - uuid: 25ad35eec9f2437197e7cdc6b841b299
+        expression: max(/MikroTik netPower 16P by SNMP SwOS/icmpping,#3)=0
+        name: 'MikroTik {model}: ICMP unavailable'
+        priority: HIGH
+        description: 3 consecutive checks failed.
+    - uuid: 33cf932bc06e4721a1c920b4b86811e7
+      name: ICMP packet loss
+      type: SIMPLE
+      key: icmppingloss
+      delay: 1m
+      value_type: FLOAT
+      units: '%'
+      triggers:
+      - uuid: dc3dfb3fde0346f096203a87071ab18c
+        expression: min(/MikroTik netPower 16P by SNMP SwOS/icmppingloss,5m)>{$MTK.ICMP.LOSS.WARN} and min(/MikroTik
+          netPower 16P by SNMP SwOS/icmppingloss,5m)<100
+        name: 'MikroTik {model}: High ICMP loss'
+        priority: WARNING
+    - uuid: 10f018a6f6a44946b453cce771649adf
+      name: ICMP round-trip time
+      type: SIMPLE
+      key: icmppingsec
+      delay: 1m
+      value_type: FLOAT
+      units: s
+      triggers:
+      - uuid: ffb8358491ad4572a9d2e626da7bf790
+        expression: avg(/MikroTik netPower 16P by SNMP SwOS/icmppingsec,5m)>{$MTK.ICMP.RTT.WARN}
+        name: 'MikroTik {model}: High ICMP RTT'
+        priority: WARNING
+    - uuid: 2e6e844b18164cd9b9568a139b24ebf9
+      name: SNMP agent uptime
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.3.0]
+      key: mtk.sys.uptime
+      delay: 1m
+      units: uptime
+      description: sysUpTime is SNMP agent uptime (seconds); may reset independently of hardware.
+      preprocessing:
+      - type: MULTIPLIER
+        parameters:
+        - '0.01'
+      tags:
+      - tag: component
+        value: system
+      triggers:
+      - uuid: d106aeac067f4a90a5533c60688def3a
+        expression: nodata(/MikroTik netPower 16P by SNMP SwOS/mtk.sys.uptime,{$MTK.SNMP.NODATA})=1 and last(/MikroTik
+          netPower 16P by SNMP SwOS/icmpping)=1
+        name: 'MikroTik netPower 16P: SNMP unavailable while ICMP succeeds'
+        priority: AVERAGE
+    - uuid: b913284fbb284cb4a3159ab270bdb8bc
+      name: System description
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.1.0]
+      key: mtk.sys.descr
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: bedaa3f9b390432cb9fdf5b6faae0a33
+      name: System object ID
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.2.0]
+      key: mtk.sys.objectid
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: 463910cac49a4ac08b8daa34ffb3ac2f
+      name: System name
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.5.0]
+      key: mtk.sys.name
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: bfcb4a166072466c95d1f6b505ba6034
+      name: System location
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.6.0]
+      key: mtk.sys.location
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: 914b191504f34c8fb803fce93e5d3a4b
+      name: System contact
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.4.0]
+      key: mtk.sys.contact
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    discovery_rules:
+    - uuid: 398a71e00f374489888ff7806720f65d
+      name: IF-MIB network interface discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#IFNAME},1.3.6.1.2.1.2.2.1.2]
+      key: mtk.if.discovery
+      delay: 1h
+      filter:
+        conditions:
+        - macro: '{#IFNAME}'
+          value: '{$MTK.IF.MATCHES}'
+      item_prototypes:
+      - uuid: 040b405895794887bd545a7603ce52a4
+        name: 'Interface {#IFNAME}: Operational status'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}]
+        key: mtk.if.oper[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: IF-MIB ifOperStatus
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 02893b3d31f14b6a92867a1ebdcf9089
+        name: 'Interface {#IFNAME}: Administrative status'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}]
+        key: mtk.if.admin[{#SNMPINDEX}]
+        delay: 5m
+        valuemap:
+          name: IF-MIB ifAdminStatus
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 21588d5317a14d1a9cae159486e0d225
+        name: 'Interface {#IFNAME}: IN traffic, 32-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.10.{#SNMPINDEX}]
+        key: mtk.if.legacy.in[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: 32-bit counter fallback; may wrap at high line rates.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 88311161415c49478c11788a8479291b
+        name: 'Interface {#IFNAME}: OUT traffic, 32-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.16.{#SNMPINDEX}]
+        key: mtk.if.legacy.out[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: 32-bit counter fallback; may wrap at high line rates.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 0299a250641b4888a9ee80679992904c
+        name: 'Interface {#IFNAME}: Inbound errors'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}]
+        key: mtk.if.in.errors[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 64b4d899db96419b8d9d00a7ae77d2f2
+        name: 'Interface {#IFNAME}: Outbound errors'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}]
+        key: mtk.if.out.errors[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 705db27a458f4be9b4831fb7fdc2e9a4
+        name: 'Interface {#IFNAME}: Inbound discards'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}]
+        key: mtk.if.in.discards[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 3cb42d33f052499bbb909a9fa8bbd350
+        name: 'Interface {#IFNAME}: Outbound discards'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}]
+        key: mtk.if.out.discards[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      graph_prototypes:
+      - uuid: de76688b3a2e40f684dd4a7c24c501db
+        name: 'Interface {#IFNAME}: Traffic (32-bit)'
+        graph_items:
+        - color: 1A7AD0
+          item:
+            host: MikroTik netPower 16P by SNMP SwOS
+            key: mtk.if.legacy.in[{#SNMPINDEX}]
+        - sortorder: '1'
+          color: ED682B
+          item:
+            host: MikroTik netPower 16P by SNMP SwOS
+            key: mtk.if.legacy.out[{#SNMPINDEX}]
+      - uuid: 11efcf81673d4a2db433c65339de4b11
+        name: 'Interface {#IFNAME}: Errors & Discards'
+        graph_items:
+        - color: CC0000
+          item:
+            host: MikroTik netPower 16P by SNMP SwOS
+            key: mtk.if.in.errors[{#SNMPINDEX}]
+        - sortorder: '1'
+          color: D4A00C
+          item:
+            host: MikroTik netPower 16P by SNMP SwOS
+            key: mtk.if.out.errors[{#SNMPINDEX}]
+        - sortorder: '2'
+          color: 5B8D2F
+          item:
+            host: MikroTik netPower 16P by SNMP SwOS
+            key: mtk.if.in.discards[{#SNMPINDEX}]
+        - sortorder: '3'
+          color: 7656A5
+          item:
+            host: MikroTik netPower 16P by SNMP SwOS
+            key: mtk.if.out.discards[{#SNMPINDEX}]
+      trigger_prototypes:
+      - uuid: d00022d5dfcb43b9b7b79dfe88f8c153
+        expression: last(/MikroTik netPower 16P by SNMP SwOS/mtk.if.oper[{#SNMPINDEX}])=2 and last(/MikroTik netPower
+          16P by SNMP SwOS/mtk.if.admin[{#SNMPINDEX}])=1
+        name: 'MikroTik {#IFNAME}: Admin enabled, interface down'
+        priority: WARNING
+        description: All discovered interfaces are included by default; adjust {$MTK.IF.MATCHES} to suppress intentionally
+          disconnected ports.
+    macros:
+    - macro: '{$MTK.IF.MATCHES}'
+      value: .*
+      description: Regex for interface descriptions discovered via IF-MIB
+    - macro: '{$MTK.ICMP.LOSS.WARN}'
+      value: '20'
+      description: ICMP packet loss warning, percent
+    - macro: '{$MTK.ICMP.RTT.WARN}'
+      value: '0.15'
+      description: Average ICMP RTT warning, seconds
+    - macro: '{$MTK.SNMP.NODATA}'
+      value: 15m
+      description: SNMP poll no-data alert interval
+    tags:
+    - tag: class
+      value: switch
+    - tag: manufacturer
+      value: MikroTik
+    valuemaps:
+    - uuid: 0254510ce17e4bb3be71e907892efa18
+      name: IF-MIB ifOperStatus
+      mappings:
+      - value: '1'
+        newvalue: up
+      - value: '2'
+        newvalue: down
+      - value: '3'
+        newvalue: testing
+      - value: '4'
+        newvalue: unknown
+      - value: '5'
+        newvalue: dormant
+      - value: '6'
+        newvalue: notPresent
+      - value: '7'
+        newvalue: lowerLayerDown
+    - uuid: 08fdd89df22848bdb48e8419e7cfbb0b
+      name: IF-MIB ifAdminStatus
+      mappings:
+      - value: '1'
+        newvalue: up
+      - value: '2'
+        newvalue: down
+      - value: '3'
+        newvalue: testing
+  graphs:
+  - uuid: 78d8c37af8964c6082855cec3da48aa3
+    name: MikroTik ICMP response and loss (netPower 16P)
+    graph_items:
+    - color: 1A7AD0
+      item:
+        host: MikroTik netPower 16P by SNMP SwOS
+        key: icmppingsec
+    - sortorder: '1'
+      color: C98921
+      yaxisside: RIGHT
+      item:
+        host: MikroTik netPower 16P by SNMP SwOS
+        key: icmppingloss

@@ -1,0 +1,427 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+  - uuid: 36bff6c29af64692839d077febfc7079
+    name: Templates/Network devices
+  templates:
+  - uuid: a66fcb4006ee4434b88189e3a63fab84
+    template: MikroTik LHG XL 5 ac by SNMP
+    name: MikroTik LHG XL 5 ac by SNMP
+    description: 'Model profile: MikroTik LHG XL 5 ac. Software family: RouterOS. Zabbix 7.0.30 standalone SNMP monitoring
+      template. Generic MIBs only: SNMPv2-MIB, IF-MIB, HOST-RESOURCES-MIB. NOT hardware validated: radio signal, LTE
+      signal, model-specific temperatures, PoE power, optical light metrics are omitted to prevent unsupported OID polling.
+      Choose only the matching OS template for each host. Catalog: https://www.zabbix.com/documentation/7.0/en/manual/config/templates_out_of_the_box/network_devices.
+      SNMP agent must be configured and reachable.'
+    groups:
+    - name: Templates/Network devices
+    items:
+    - uuid: 1179f70ac8434015bd2666056528640a
+      name: ICMP ping
+      type: SIMPLE
+      key: icmpping
+      delay: 1m
+      history: 7d
+      tags:
+      - tag: component
+        value: availability
+      triggers:
+      - uuid: c334fd96026c40c4831ad848323db9cc
+        expression: max(/MikroTik LHG XL 5 ac by SNMP/icmpping,#3)=0
+        name: 'MikroTik {model}: ICMP unavailable'
+        priority: HIGH
+        description: 3 consecutive checks failed.
+    - uuid: e039ab63e3ee4f83a9137d873240abac
+      name: ICMP packet loss
+      type: SIMPLE
+      key: icmppingloss
+      delay: 1m
+      value_type: FLOAT
+      units: '%'
+      triggers:
+      - uuid: d39cf9eeb98f4214b8507138c2a3508a
+        expression: min(/MikroTik LHG XL 5 ac by SNMP/icmppingloss,5m)>{$MTK.ICMP.LOSS.WARN} and min(/MikroTik LHG XL
+          5 ac by SNMP/icmppingloss,5m)<100
+        name: 'MikroTik {model}: High ICMP loss'
+        priority: WARNING
+    - uuid: 5e68a39d602e462f80ed79da906d6ab2
+      name: ICMP round-trip time
+      type: SIMPLE
+      key: icmppingsec
+      delay: 1m
+      value_type: FLOAT
+      units: s
+      triggers:
+      - uuid: cae904a0faca4ae7bd04636f132b1d18
+        expression: avg(/MikroTik LHG XL 5 ac by SNMP/icmppingsec,5m)>{$MTK.ICMP.RTT.WARN}
+        name: 'MikroTik {model}: High ICMP RTT'
+        priority: WARNING
+    - uuid: 7190fe15a2224b8280267b275bb491b0
+      name: SNMP agent uptime
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.3.0]
+      key: mtk.sys.uptime
+      delay: 1m
+      units: uptime
+      description: sysUpTime is SNMP agent uptime (seconds); may reset independently of hardware.
+      preprocessing:
+      - type: MULTIPLIER
+        parameters:
+        - '0.01'
+      tags:
+      - tag: component
+        value: system
+      triggers:
+      - uuid: a1226108aba645f0952eb310ab789eb7
+        expression: nodata(/MikroTik LHG XL 5 ac by SNMP/mtk.sys.uptime,{$MTK.SNMP.NODATA})=1 and last(/MikroTik LHG
+          XL 5 ac by SNMP/icmpping)=1
+        name: 'MikroTik LHG XL 5 ac: SNMP unavailable while ICMP succeeds'
+        priority: AVERAGE
+    - uuid: aff96e068fc245dc8be974643ef5ba67
+      name: System description
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.1.0]
+      key: mtk.sys.descr
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: 25575ee899f24d1d84c5ff452bacde26
+      name: System object ID
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.2.0]
+      key: mtk.sys.objectid
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: d6345ce401d44d8db5f17d8098a05b4c
+      name: System name
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.5.0]
+      key: mtk.sys.name
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: 8a237a4b132f4d4f8ca734a6cb4ae59e
+      name: System location
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.6.0]
+      key: mtk.sys.location
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: 809db3f2bf6f4d47993922dfe602c819
+      name: System contact
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.4.0]
+      key: mtk.sys.contact
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    discovery_rules:
+    - uuid: 0767f83674ad4c419464d9283db91658
+      name: IF-MIB network interface discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#IFNAME},1.3.6.1.2.1.2.2.1.2]
+      key: mtk.if.discovery
+      delay: 1h
+      filter:
+        conditions:
+        - macro: '{#IFNAME}'
+          value: '{$MTK.IF.MATCHES}'
+      item_prototypes:
+      - uuid: 0e96cfac0e7d4a2f869fb84e39349a9f
+        name: 'Interface {#IFNAME}: Operational status'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}]
+        key: mtk.if.oper[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: IF-MIB ifOperStatus
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 93b84d0c88ec4d7eb14d8c5b0b0fd714
+        name: 'Interface {#IFNAME}: Administrative status'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}]
+        key: mtk.if.admin[{#SNMPINDEX}]
+        delay: 5m
+        valuemap:
+          name: IF-MIB ifAdminStatus
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 9127511c78fd47509ea38e8aacd203ae
+        name: 'Interface {#IFNAME}: IN traffic, 64-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.31.1.1.1.6.{#SNMPINDEX}]
+        key: mtk.if.hc.in[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: Uses IF-MIB 64-bit counters. Older RouterOS may lack these counters.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: b529ae71511a433386ed112066c32a12
+        name: 'Interface {#IFNAME}: OUT traffic, 64-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.31.1.1.1.10.{#SNMPINDEX}]
+        key: mtk.if.hc.out[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: Uses IF-MIB 64-bit counters. Older RouterOS may lack these counters.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: acd1d2a554654fa4980b9a4b0e7f52d2
+        name: 'Interface {#IFNAME}: IN traffic, 32-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.10.{#SNMPINDEX}]
+        key: mtk.if.legacy.in[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: 32-bit counter fallback; may wrap at high line rates.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 54c7107223dd40a3a4d4e72f0495de82
+        name: 'Interface {#IFNAME}: OUT traffic, 32-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.16.{#SNMPINDEX}]
+        key: mtk.if.legacy.out[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: 32-bit counter fallback; may wrap at high line rates.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: cff1d180389d4a7385e2d3048e9782a0
+        name: 'Interface {#IFNAME}: Inbound errors'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}]
+        key: mtk.if.in.errors[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 5e5a418be57b4761ab01ac1f7533b4ed
+        name: 'Interface {#IFNAME}: Outbound errors'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}]
+        key: mtk.if.out.errors[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 91762689693047e680c7878476a6d9e4
+        name: 'Interface {#IFNAME}: Inbound discards'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}]
+        key: mtk.if.in.discards[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 70551ddca63240ad9fc34bd731b89efc
+        name: 'Interface {#IFNAME}: Outbound discards'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}]
+        key: mtk.if.out.discards[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      graph_prototypes:
+      - uuid: 91cfc9dca380495c9217c6c56900c76c
+        name: 'Interface {#IFNAME}: Traffic (64-bit)'
+        graph_items:
+        - color: 1A7AD0
+          item:
+            host: MikroTik LHG XL 5 ac by SNMP
+            key: mtk.if.hc.in[{#SNMPINDEX}]
+        - sortorder: '1'
+          color: ED682B
+          item:
+            host: MikroTik LHG XL 5 ac by SNMP
+            key: mtk.if.hc.out[{#SNMPINDEX}]
+      - uuid: 51e81f7e85c74671b2b9538de90fdad1
+        name: 'Interface {#IFNAME}: Errors & Discards'
+        graph_items:
+        - color: CC0000
+          item:
+            host: MikroTik LHG XL 5 ac by SNMP
+            key: mtk.if.in.errors[{#SNMPINDEX}]
+        - sortorder: '1'
+          color: D4A00C
+          item:
+            host: MikroTik LHG XL 5 ac by SNMP
+            key: mtk.if.out.errors[{#SNMPINDEX}]
+        - sortorder: '2'
+          color: 5B8D2F
+          item:
+            host: MikroTik LHG XL 5 ac by SNMP
+            key: mtk.if.in.discards[{#SNMPINDEX}]
+        - sortorder: '3'
+          color: 7656A5
+          item:
+            host: MikroTik LHG XL 5 ac by SNMP
+            key: mtk.if.out.discards[{#SNMPINDEX}]
+      trigger_prototypes:
+      - uuid: 4147002e7f6e4ad1a58df46665380254
+        expression: last(/MikroTik LHG XL 5 ac by SNMP/mtk.if.oper[{#SNMPINDEX}])=2 and last(/MikroTik LHG XL 5 ac by
+          SNMP/mtk.if.admin[{#SNMPINDEX}])=1
+        name: 'MikroTik {#IFNAME}: Admin enabled, interface down'
+        priority: WARNING
+        description: All discovered interfaces are included by default; adjust {$MTK.IF.MATCHES} to suppress intentionally
+          disconnected ports.
+    - uuid: 636fed68132148eca22443505caa704e
+      name: CPU processor discovery (HOST-RESOURCES-MIB)
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#CPULOAD},1.3.6.1.2.1.25.3.3.1.2]
+      key: mtk.cpu.discovery
+      delay: 1h
+      description: Discovers CPU processor rows exposed by HOST-RESOURCES-MIB; may be unsupported by some RouterOS builds.
+      item_prototypes:
+      - uuid: 619afb19d52842098c178f3485199566
+        name: 'CPU {#SNMPINDEX}: Utilization'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.25.3.3.1.2.{#SNMPINDEX}]
+        key: mtk.cpu.load[{#SNMPINDEX}]
+        delay: 2m
+        units: '%'
+        tags:
+        - tag: component
+          value: cpu
+      graph_prototypes:
+      - uuid: 0256a94f03d74d028c242367d674c516
+        name: 'CPU {#SNMPINDEX}: Load'
+        graph_items:
+        - color: 1A7AD0
+          item:
+            host: MikroTik LHG XL 5 ac by SNMP
+            key: mtk.cpu.load[{#SNMPINDEX}]
+      trigger_prototypes:
+      - uuid: 14783134c8ca418f8cd928c984ae4775
+        expression: min(/MikroTik LHG XL 5 ac by SNMP/mtk.cpu.load[{#SNMPINDEX}],10m)>90
+        name: 'MikroTik CPU {#SNMPINDEX}: Sustained load over 90%'
+        priority: WARNING
+    macros:
+    - macro: '{$MTK.IF.MATCHES}'
+      value: .*
+      description: Regex for interface descriptions discovered via IF-MIB
+    - macro: '{$MTK.ICMP.LOSS.WARN}'
+      value: '20'
+      description: ICMP packet loss warning, percent
+    - macro: '{$MTK.ICMP.RTT.WARN}'
+      value: '0.15'
+      description: Average ICMP RTT warning, seconds
+    - macro: '{$MTK.SNMP.NODATA}'
+      value: 15m
+      description: SNMP poll no-data alert interval
+    tags:
+    - tag: class
+      value: router/network
+    - tag: manufacturer
+      value: MikroTik
+    valuemaps:
+    - uuid: 4e60196ee3234a57af356a235271ddb7
+      name: IF-MIB ifOperStatus
+      mappings:
+      - value: '1'
+        newvalue: up
+      - value: '2'
+        newvalue: down
+      - value: '3'
+        newvalue: testing
+      - value: '4'
+        newvalue: unknown
+      - value: '5'
+        newvalue: dormant
+      - value: '6'
+        newvalue: notPresent
+      - value: '7'
+        newvalue: lowerLayerDown
+    - uuid: 1750cd2dbfa2472283566215802e51c7
+      name: IF-MIB ifAdminStatus
+      mappings:
+      - value: '1'
+        newvalue: up
+      - value: '2'
+        newvalue: down
+      - value: '3'
+        newvalue: testing
+  graphs:
+  - uuid: 25a0d5c011e34c7f80794aa65cb11152
+    name: MikroTik ICMP response and loss (LHG XL 5 ac)
+    graph_items:
+    - color: 1A7AD0
+      item:
+        host: MikroTik LHG XL 5 ac by SNMP
+        key: icmppingsec
+    - sortorder: '1'
+      color: C98921
+      yaxisside: RIGHT
+      item:
+        host: MikroTik LHG XL 5 ac by SNMP
+        key: icmppingloss
