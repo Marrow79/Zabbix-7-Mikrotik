@@ -1,0 +1,361 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+  - uuid: 36bff6c29af64692839d077febfc7079
+    name: Templates/Network devices
+  templates:
+  - uuid: 292b6bdc71a04b8f8963296479ecc678
+    template: MikroTik GPERx6 by SNMP
+    name: MikroTik GPERx6 by SNMP
+    description: 'Model profile: MikroTik GPERx6. Software family: SwOS. Zabbix 7.0.30 standalone SNMP monitoring template.
+      Generic MIBs only: SNMPv2-MIB, IF-MIB. NOT hardware validated: radio signal, LTE signal, model-specific temperatures,
+      PoE power, optical light metrics are omitted to prevent unsupported OID polling. Choose only the matching OS template
+      for each host. Catalog: https://mikrotik.com/products/group/switches. SNMP agent must be configured and reachable.'
+    groups:
+    - name: Templates/Network devices
+    items:
+    - uuid: 67599a8f9040400cb820da0c57c1b25d
+      name: ICMP ping
+      type: SIMPLE
+      key: icmpping
+      delay: 1m
+      history: 7d
+      tags:
+      - tag: component
+        value: availability
+      triggers:
+      - uuid: ea15c8e1f7a34623b6afe7d26d721776
+        expression: max(/MikroTik GPERx6 by SNMP/icmpping,#3)=0
+        name: 'MikroTik {model}: ICMP unavailable'
+        priority: HIGH
+        description: 3 consecutive checks failed.
+    - uuid: 171a25f2258e4f48ac0a124d61cc32b3
+      name: ICMP packet loss
+      type: SIMPLE
+      key: icmppingloss
+      delay: 1m
+      value_type: FLOAT
+      units: '%'
+      triggers:
+      - uuid: d519fe6de57343e4927d295aba7b6990
+        expression: min(/MikroTik GPERx6 by SNMP/icmppingloss,5m)>{$MTK.ICMP.LOSS.WARN} and min(/MikroTik GPERx6 by SNMP/icmppingloss,5m)<100
+        name: 'MikroTik {model}: High ICMP loss'
+        priority: WARNING
+    - uuid: 327886ded5bd4df2ab234bb4f7fb4121
+      name: ICMP round-trip time
+      type: SIMPLE
+      key: icmppingsec
+      delay: 1m
+      value_type: FLOAT
+      units: s
+      triggers:
+      - uuid: 5b140507cdee49c289c00b81449a6d2f
+        expression: avg(/MikroTik GPERx6 by SNMP/icmppingsec,5m)>{$MTK.ICMP.RTT.WARN}
+        name: 'MikroTik {model}: High ICMP RTT'
+        priority: WARNING
+    - uuid: 7a921668487d4818a38eed01919abd45
+      name: SNMP agent uptime
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.3.0]
+      key: mtk.sys.uptime
+      delay: 1m
+      units: uptime
+      description: sysUpTime is SNMP agent uptime (seconds); may reset independently of hardware.
+      preprocessing:
+      - type: MULTIPLIER
+        parameters:
+        - '0.01'
+      tags:
+      - tag: component
+        value: system
+      triggers:
+      - uuid: 3f9aeefad604401f9c74b8705e27be59
+        expression: nodata(/MikroTik GPERx6 by SNMP/mtk.sys.uptime,{$MTK.SNMP.NODATA})=1 and last(/MikroTik GPERx6 by
+          SNMP/icmpping)=1
+        name: 'MikroTik GPERx6: SNMP unavailable while ICMP succeeds'
+        priority: AVERAGE
+    - uuid: c9142e4aa52349848b6fd3ad2c81431e
+      name: System description
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.1.0]
+      key: mtk.sys.descr
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: a8360e69708e45b984b76fabb14793bb
+      name: System object ID
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.2.0]
+      key: mtk.sys.objectid
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: d116774b833643fa9ae50ef2b822b3c9
+      name: System name
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.5.0]
+      key: mtk.sys.name
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: 01b9f476af4748c3bf3ae5a42bfacf0d
+      name: System location
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.6.0]
+      key: mtk.sys.location
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: 9763638ceba841fa8fb6f5d7c28e06ba
+      name: System contact
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.4.0]
+      key: mtk.sys.contact
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    discovery_rules:
+    - uuid: 0574a4b528ad48c9b7088722aef1ab8b
+      name: IF-MIB network interface discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#IFNAME},1.3.6.1.2.1.2.2.1.2]
+      key: mtk.if.discovery
+      delay: 1h
+      filter:
+        conditions:
+        - macro: '{#IFNAME}'
+          value: '{$MTK.IF.MATCHES}'
+      item_prototypes:
+      - uuid: 528fad85dc474a62afb0111c38f2c931
+        name: 'Interface {#IFNAME}: Operational status'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}]
+        key: mtk.if.oper[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: IF-MIB ifOperStatus
+        tags:
+        - tag: component
+          value: interface
+      - uuid: e4f989c1577c4baead1b329814399671
+        name: 'Interface {#IFNAME}: Administrative status'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}]
+        key: mtk.if.admin[{#SNMPINDEX}]
+        delay: 5m
+        valuemap:
+          name: IF-MIB ifAdminStatus
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 529d6416584d40e29266484fa987b200
+        name: 'Interface {#IFNAME}: IN traffic, 32-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.10.{#SNMPINDEX}]
+        key: mtk.if.legacy.in[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: 32-bit counter fallback; may wrap at high line rates.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 3895a95deb794145aa5d0e51e58476cd
+        name: 'Interface {#IFNAME}: OUT traffic, 32-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.16.{#SNMPINDEX}]
+        key: mtk.if.legacy.out[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: 32-bit counter fallback; may wrap at high line rates.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: db2a0240b8ad496a8a38a97a4ae0ef8c
+        name: 'Interface {#IFNAME}: Inbound errors'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}]
+        key: mtk.if.in.errors[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: e172d24150aa41dfa115624764065f3b
+        name: 'Interface {#IFNAME}: Outbound errors'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}]
+        key: mtk.if.out.errors[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 506fb76b5e0e453eb52a8ef752a2ce07
+        name: 'Interface {#IFNAME}: Inbound discards'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}]
+        key: mtk.if.in.discards[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: d5dadd94e4134ae48ff842cbf5a08fb9
+        name: 'Interface {#IFNAME}: Outbound discards'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}]
+        key: mtk.if.out.discards[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      graph_prototypes:
+      - uuid: c597fb63353f4e71a71bf18777c4c078
+        name: 'Interface {#IFNAME}: Traffic (32-bit)'
+        graph_items:
+        - color: 1A7AD0
+          item:
+            host: MikroTik GPERx6 by SNMP
+            key: mtk.if.legacy.in[{#SNMPINDEX}]
+        - sortorder: '1'
+          color: ED682B
+          item:
+            host: MikroTik GPERx6 by SNMP
+            key: mtk.if.legacy.out[{#SNMPINDEX}]
+      - uuid: ef3432c422a84f049c7b8d57fc0e2828
+        name: 'Interface {#IFNAME}: Errors & Discards'
+        graph_items:
+        - color: CC0000
+          item:
+            host: MikroTik GPERx6 by SNMP
+            key: mtk.if.in.errors[{#SNMPINDEX}]
+        - sortorder: '1'
+          color: D4A00C
+          item:
+            host: MikroTik GPERx6 by SNMP
+            key: mtk.if.out.errors[{#SNMPINDEX}]
+        - sortorder: '2'
+          color: 5B8D2F
+          item:
+            host: MikroTik GPERx6 by SNMP
+            key: mtk.if.in.discards[{#SNMPINDEX}]
+        - sortorder: '3'
+          color: 7656A5
+          item:
+            host: MikroTik GPERx6 by SNMP
+            key: mtk.if.out.discards[{#SNMPINDEX}]
+      trigger_prototypes:
+      - uuid: 40b5c45a926c4594a6fdfbab92edf6c4
+        expression: last(/MikroTik GPERx6 by SNMP/mtk.if.oper[{#SNMPINDEX}])=2 and last(/MikroTik GPERx6 by SNMP/mtk.if.admin[{#SNMPINDEX}])=1
+        name: 'MikroTik {#IFNAME}: Admin enabled, interface down'
+        priority: WARNING
+        description: All discovered interfaces are included by default; adjust {$MTK.IF.MATCHES} to suppress intentionally
+          disconnected ports.
+    macros:
+    - macro: '{$MTK.IF.MATCHES}'
+      value: .*
+      description: Regex for interface descriptions discovered via IF-MIB
+    - macro: '{$MTK.ICMP.LOSS.WARN}'
+      value: '20'
+      description: ICMP packet loss warning, percent
+    - macro: '{$MTK.ICMP.RTT.WARN}'
+      value: '0.15'
+      description: Average ICMP RTT warning, seconds
+    - macro: '{$MTK.SNMP.NODATA}'
+      value: 15m
+      description: SNMP poll no-data alert interval
+    tags:
+    - tag: class
+      value: switch
+    - tag: manufacturer
+      value: MikroTik
+    valuemaps:
+    - uuid: f9716b1843b14dfc8511b1f47a7b7cc6
+      name: IF-MIB ifOperStatus
+      mappings:
+      - value: '1'
+        newvalue: up
+      - value: '2'
+        newvalue: down
+      - value: '3'
+        newvalue: testing
+      - value: '4'
+        newvalue: unknown
+      - value: '5'
+        newvalue: dormant
+      - value: '6'
+        newvalue: notPresent
+      - value: '7'
+        newvalue: lowerLayerDown
+    - uuid: 627822db86644cb08a87665b0943b41a
+      name: IF-MIB ifAdminStatus
+      mappings:
+      - value: '1'
+        newvalue: up
+      - value: '2'
+        newvalue: down
+      - value: '3'
+        newvalue: testing
+  graphs:
+  - uuid: 53515dcfa21542ae8d4ed5f5217532c7
+    name: MikroTik ICMP response and loss (GPERx6)
+    graph_items:
+    - color: 1A7AD0
+      item:
+        host: MikroTik GPERx6 by SNMP
+        key: icmppingsec
+    - sortorder: '1'
+      color: C98921
+      yaxisside: RIGHT
+      item:
+        host: MikroTik GPERx6 by SNMP
+        key: icmppingloss

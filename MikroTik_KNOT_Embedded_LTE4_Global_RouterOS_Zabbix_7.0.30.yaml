@@ -1,0 +1,427 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+  - uuid: 36bff6c29af64692839d077febfc7079
+    name: Templates/Network devices
+  templates:
+  - uuid: 20207a4f714a418c8b6d75773d6176cf
+    template: MikroTik KNOT Embedded LTE4 Global by SNMP
+    name: MikroTik KNOT Embedded LTE4 Global by SNMP
+    description: 'Model profile: MikroTik KNOT Embedded LTE4 Global. Software family: RouterOS. Zabbix 7.0.30 standalone
+      SNMP monitoring template. Generic MIBs only: SNMPv2-MIB, IF-MIB, HOST-RESOURCES-MIB. NOT hardware validated: radio
+      signal, LTE signal, model-specific temperatures, PoE power, optical light metrics are omitted to prevent unsupported
+      OID polling. Choose only the matching OS template for each host. Catalog: https://mikrotik.com/products/group/lte-5g-products.
+      SNMP agent must be configured and reachable.'
+    groups:
+    - name: Templates/Network devices
+    items:
+    - uuid: 496b0c0408464cba885015513bba827a
+      name: ICMP ping
+      type: SIMPLE
+      key: icmpping
+      delay: 1m
+      history: 7d
+      tags:
+      - tag: component
+        value: availability
+      triggers:
+      - uuid: 67b62e9097ca412fa5f2b52dbd810db5
+        expression: max(/MikroTik KNOT Embedded LTE4 Global by SNMP/icmpping,#3)=0
+        name: 'MikroTik {model}: ICMP unavailable'
+        priority: HIGH
+        description: 3 consecutive checks failed.
+    - uuid: 82d50959c4e5421e9b688dd81f4811a7
+      name: ICMP packet loss
+      type: SIMPLE
+      key: icmppingloss
+      delay: 1m
+      value_type: FLOAT
+      units: '%'
+      triggers:
+      - uuid: cd343d16b5a5443f92b7b9a11ad0bdc5
+        expression: min(/MikroTik KNOT Embedded LTE4 Global by SNMP/icmppingloss,5m)>{$MTK.ICMP.LOSS.WARN} and min(/MikroTik
+          KNOT Embedded LTE4 Global by SNMP/icmppingloss,5m)<100
+        name: 'MikroTik {model}: High ICMP loss'
+        priority: WARNING
+    - uuid: c98179a8ccde41b3852d83d8236939eb
+      name: ICMP round-trip time
+      type: SIMPLE
+      key: icmppingsec
+      delay: 1m
+      value_type: FLOAT
+      units: s
+      triggers:
+      - uuid: 7b66bb8254fd40d9bb6f4b74379d371a
+        expression: avg(/MikroTik KNOT Embedded LTE4 Global by SNMP/icmppingsec,5m)>{$MTK.ICMP.RTT.WARN}
+        name: 'MikroTik {model}: High ICMP RTT'
+        priority: WARNING
+    - uuid: b72493935d4b44878e57597ae4089765
+      name: SNMP agent uptime
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.3.0]
+      key: mtk.sys.uptime
+      delay: 1m
+      units: uptime
+      description: sysUpTime is SNMP agent uptime (seconds); may reset independently of hardware.
+      preprocessing:
+      - type: MULTIPLIER
+        parameters:
+        - '0.01'
+      tags:
+      - tag: component
+        value: system
+      triggers:
+      - uuid: 232338381b1e46068a873172419da532
+        expression: nodata(/MikroTik KNOT Embedded LTE4 Global by SNMP/mtk.sys.uptime,{$MTK.SNMP.NODATA})=1 and last(/MikroTik
+          KNOT Embedded LTE4 Global by SNMP/icmpping)=1
+        name: 'MikroTik KNOT Embedded LTE4 Global: SNMP unavailable while ICMP succeeds'
+        priority: AVERAGE
+    - uuid: 8984accb062749e5998c344e5e876d32
+      name: System description
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.1.0]
+      key: mtk.sys.descr
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: b9c1875f0d3b4bd9a9f6577189d5b33d
+      name: System object ID
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.2.0]
+      key: mtk.sys.objectid
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: 58715394f3ad45c9971116e2a5a1194a
+      name: System name
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.5.0]
+      key: mtk.sys.name
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: e6bd3beac0154a0d98ca6ebc15cfd5f4
+      name: System location
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.6.0]
+      key: mtk.sys.location
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    - uuid: af8fe4fe086a41f39b8d9ffb4798f1c0
+      name: System contact
+      type: SNMP_AGENT
+      snmp_oid: get[1.3.6.1.2.1.1.4.0]
+      key: mtk.sys.contact
+      delay: 1h
+      value_type: CHAR
+      preprocessing:
+      - type: DISCARD_UNCHANGED_HEARTBEAT
+        parameters:
+        - 12h
+      tags:
+      - tag: component
+        value: inventory
+    discovery_rules:
+    - uuid: f36241082a934b3eb6bf936a0ab0928a
+      name: IF-MIB network interface discovery
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#IFNAME},1.3.6.1.2.1.2.2.1.2]
+      key: mtk.if.discovery
+      delay: 1h
+      filter:
+        conditions:
+        - macro: '{#IFNAME}'
+          value: '{$MTK.IF.MATCHES}'
+      item_prototypes:
+      - uuid: 09bbdfc9dc6d4cbcaf22cb81f61dff53
+        name: 'Interface {#IFNAME}: Operational status'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}]
+        key: mtk.if.oper[{#SNMPINDEX}]
+        delay: 2m
+        valuemap:
+          name: IF-MIB ifOperStatus
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 463ddbe490e84a279929bce2a27b4a84
+        name: 'Interface {#IFNAME}: Administrative status'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}]
+        key: mtk.if.admin[{#SNMPINDEX}]
+        delay: 5m
+        valuemap:
+          name: IF-MIB ifAdminStatus
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 861c816147144b9bbf38de2d47ba46af
+        name: 'Interface {#IFNAME}: IN traffic, 64-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.31.1.1.1.6.{#SNMPINDEX}]
+        key: mtk.if.hc.in[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: Uses IF-MIB 64-bit counters. Older RouterOS may lack these counters.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: b0cf15937ab848c2b24ca52096ac747b
+        name: 'Interface {#IFNAME}: OUT traffic, 64-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.31.1.1.1.10.{#SNMPINDEX}]
+        key: mtk.if.hc.out[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: Uses IF-MIB 64-bit counters. Older RouterOS may lack these counters.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 986b5160a5e84e088a7ebcfbc653b571
+        name: 'Interface {#IFNAME}: IN traffic, 32-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.10.{#SNMPINDEX}]
+        key: mtk.if.legacy.in[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: 32-bit counter fallback; may wrap at high line rates.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 2014835377a24ceaa8a556a27bd1e1c9
+        name: 'Interface {#IFNAME}: OUT traffic, 32-bit'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.16.{#SNMPINDEX}]
+        key: mtk.if.legacy.out[{#SNMPINDEX}]
+        delay: 1m
+        units: bps
+        description: 32-bit counter fallback; may wrap at high line rates.
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        - type: MULTIPLIER
+          parameters:
+          - '8'
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 8f51312a60e24f17a172337f1c7e284f
+        name: 'Interface {#IFNAME}: Inbound errors'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}]
+        key: mtk.if.in.errors[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 4d849aaba8ad49569f06df8164e4cec0
+        name: 'Interface {#IFNAME}: Outbound errors'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}]
+        key: mtk.if.out.errors[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: 85dea7ecb1a0460593dd0c0fcdfc19dc
+        name: 'Interface {#IFNAME}: Inbound discards'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}]
+        key: mtk.if.in.discards[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      - uuid: d66c36c898f94999817c5c625d49fba1
+        name: 'Interface {#IFNAME}: Outbound discards'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}]
+        key: mtk.if.out.discards[{#SNMPINDEX}]
+        delay: 2m
+        units: pps
+        preprocessing:
+        - type: CHANGE_PER_SECOND
+        tags:
+        - tag: component
+          value: interface
+      graph_prototypes:
+      - uuid: 32b27714f70e49859eedc9d1da0cf011
+        name: 'Interface {#IFNAME}: Traffic (64-bit)'
+        graph_items:
+        - color: 1A7AD0
+          item:
+            host: MikroTik KNOT Embedded LTE4 Global by SNMP
+            key: mtk.if.hc.in[{#SNMPINDEX}]
+        - sortorder: '1'
+          color: ED682B
+          item:
+            host: MikroTik KNOT Embedded LTE4 Global by SNMP
+            key: mtk.if.hc.out[{#SNMPINDEX}]
+      - uuid: 147a0ee04b0c46c2aa371c5b563b0f3e
+        name: 'Interface {#IFNAME}: Errors & Discards'
+        graph_items:
+        - color: CC0000
+          item:
+            host: MikroTik KNOT Embedded LTE4 Global by SNMP
+            key: mtk.if.in.errors[{#SNMPINDEX}]
+        - sortorder: '1'
+          color: D4A00C
+          item:
+            host: MikroTik KNOT Embedded LTE4 Global by SNMP
+            key: mtk.if.out.errors[{#SNMPINDEX}]
+        - sortorder: '2'
+          color: 5B8D2F
+          item:
+            host: MikroTik KNOT Embedded LTE4 Global by SNMP
+            key: mtk.if.in.discards[{#SNMPINDEX}]
+        - sortorder: '3'
+          color: 7656A5
+          item:
+            host: MikroTik KNOT Embedded LTE4 Global by SNMP
+            key: mtk.if.out.discards[{#SNMPINDEX}]
+      trigger_prototypes:
+      - uuid: c0d3f5c3a64b4cbfb07fc6c513ecf042
+        expression: last(/MikroTik KNOT Embedded LTE4 Global by SNMP/mtk.if.oper[{#SNMPINDEX}])=2 and last(/MikroTik
+          KNOT Embedded LTE4 Global by SNMP/mtk.if.admin[{#SNMPINDEX}])=1
+        name: 'MikroTik {#IFNAME}: Admin enabled, interface down'
+        priority: WARNING
+        description: All discovered interfaces are included by default; adjust {$MTK.IF.MATCHES} to suppress intentionally
+          disconnected ports.
+    - uuid: b19506dd78f346d2a0a294165800a491
+      name: CPU processor discovery (HOST-RESOURCES-MIB)
+      type: SNMP_AGENT
+      snmp_oid: discovery[{#CPULOAD},1.3.6.1.2.1.25.3.3.1.2]
+      key: mtk.cpu.discovery
+      delay: 1h
+      description: Discovers CPU processor rows exposed by HOST-RESOURCES-MIB; may be unsupported by some RouterOS builds.
+      item_prototypes:
+      - uuid: 247cc7a00ccb4f249d472e164738e93f
+        name: 'CPU {#SNMPINDEX}: Utilization'
+        type: SNMP_AGENT
+        snmp_oid: get[1.3.6.1.2.1.25.3.3.1.2.{#SNMPINDEX}]
+        key: mtk.cpu.load[{#SNMPINDEX}]
+        delay: 2m
+        units: '%'
+        tags:
+        - tag: component
+          value: cpu
+      graph_prototypes:
+      - uuid: 4af442e9cb4647a5a0ae4bbe4c71e5aa
+        name: 'CPU {#SNMPINDEX}: Load'
+        graph_items:
+        - color: 1A7AD0
+          item:
+            host: MikroTik KNOT Embedded LTE4 Global by SNMP
+            key: mtk.cpu.load[{#SNMPINDEX}]
+      trigger_prototypes:
+      - uuid: 6fde8e2559ef42e7bd63d287373690fa
+        expression: min(/MikroTik KNOT Embedded LTE4 Global by SNMP/mtk.cpu.load[{#SNMPINDEX}],10m)>90
+        name: 'MikroTik CPU {#SNMPINDEX}: Sustained load over 90%'
+        priority: WARNING
+    macros:
+    - macro: '{$MTK.IF.MATCHES}'
+      value: .*
+      description: Regex for interface descriptions discovered via IF-MIB
+    - macro: '{$MTK.ICMP.LOSS.WARN}'
+      value: '20'
+      description: ICMP packet loss warning, percent
+    - macro: '{$MTK.ICMP.RTT.WARN}'
+      value: '0.15'
+      description: Average ICMP RTT warning, seconds
+    - macro: '{$MTK.SNMP.NODATA}'
+      value: 15m
+      description: SNMP poll no-data alert interval
+    tags:
+    - tag: class
+      value: router/network
+    - tag: manufacturer
+      value: MikroTik
+    valuemaps:
+    - uuid: 40bfd7c58a2848e5b0eb5aa375285721
+      name: IF-MIB ifOperStatus
+      mappings:
+      - value: '1'
+        newvalue: up
+      - value: '2'
+        newvalue: down
+      - value: '3'
+        newvalue: testing
+      - value: '4'
+        newvalue: unknown
+      - value: '5'
+        newvalue: dormant
+      - value: '6'
+        newvalue: notPresent
+      - value: '7'
+        newvalue: lowerLayerDown
+    - uuid: f938d32df97f4c7aaac81954f067b155
+      name: IF-MIB ifAdminStatus
+      mappings:
+      - value: '1'
+        newvalue: up
+      - value: '2'
+        newvalue: down
+      - value: '3'
+        newvalue: testing
+  graphs:
+  - uuid: b4a628efa6794912bef54c2ec6eac833
+    name: MikroTik ICMP response and loss (KNOT Embedded LTE4 Global)
+    graph_items:
+    - color: 1A7AD0
+      item:
+        host: MikroTik KNOT Embedded LTE4 Global by SNMP
+        key: icmppingsec
+    - sortorder: '1'
+      color: C98921
+      yaxisside: RIGHT
+      item:
+        host: MikroTik KNOT Embedded LTE4 Global by SNMP
+        key: icmppingloss
